@@ -3,12 +3,16 @@ import { promisify } from 'util';
 
 class RedisClient {
   constructor () {
+    this.isConnected = false;
     this.client = createClient();
+    this.client.on('connect', () => {
+      this.isConnected = true;
+    });
     this.client.on('error', (err) => console.log(err));
   }
 
   isAlive () {
-    return !this.client.connected;
+    return this.isConnected;
   }
 
   async get (key) {
@@ -29,4 +33,4 @@ class RedisClient {
 }
 
 const redisClient = new RedisClient();
-module.exports = redisClient;
+export default redisClient;
