@@ -12,4 +12,4 @@ router.get('/status', AppController.getStatus);
 router.get('/connect', AuthController.getConnect);
 router.get('/disconnect', AuthController.getDisconnect);
 
-module.exports = router;
+export default router;

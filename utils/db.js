@@ -1,7 +1,7 @@
 import MongoClient from 'mongodb';
 
 const PORT = process.env.DB_PORT || '27017';
-const HOST = process.env.DB_HOST || 'localhost';
+const HOST = process.env.DB_HOST || '127.0.0.1';
 const URL = `mongodb://${HOST}:${PORT}`;
 const DB = process.env.DB_DATABASE || 'files_manager';
 
@@ -11,6 +11,8 @@ class DBClient {
     MongoClient(URL, { useUnifiedTopology: true })
       .then((client) => {
         this.db = client.db(DB);
+        this.users = this.db.collection('users');
+        this.files = this.db.collection('files');
         this.client = client;
       })
       .catch((err) => {
@@ -23,11 +25,11 @@ class DBClient {
   }
 
   async nbUsers() {
-    return this.db.collection('users').count();
+    return this.users.countDocuments();
   }
 
   async nbFiles() {
-    return this.db.collection('files').count();
+    return this.files.countDocuments();
   }
 }
 
