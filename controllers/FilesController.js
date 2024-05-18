@@ -1,10 +1,16 @@
 import fs from 'fs';
-import { ObjectId } from 'mongodb';
+// import Queue from 'bull';
 import { v4 } from 'uuid';
+import mime from 'mime-types';
+import { ObjectId } from 'mongodb';
 import dbClient from '../utils/db';
-import getUserByToken from '../utils/getUserByToken';
+import { fileQueue } from '../worker';
+import setPublish from '../utils/setPublish';
 import throwError from '../utils/throwError';
+import getUserByToken from '../utils/getUserByToken';
 import throwUnauthError from '../utils/throwUnauthError';
+
+// const fileQueue = new Queue();
 
 const FOLDER_PATH = process.env.FOLDER_PATH || '/tmp/files_manager';
 const PAGE_LIMIT = 20;
@@ -58,7 +64,11 @@ export default class FilesController {
         localPath,
         ...newFile,
       });
-      return res.status(201).send(response.ops[0]);
+      const returnedValue = response.ops[0];
+      if (type === 'image') {
+        fileQueue.add('add image', { userId: returnedValue.userId, fileId: returnedValue._id });
+      }
+      return res.status(201).send(returnedValue);
     }
     return throwUnauthError(res);
   }
@@ -87,6 +97,42 @@ export default class FilesController {
         .limit(PAGE_LIMIT)
         .toArray();
       return res.status(200).send(files);
+    }
+    return throwUnauthError(res);
+  }
+
+  static async putPublish(req, res) {
+    const data = await setPublish(req, res, true);
+    return data;
+  }
+
+  static async putUnpublish(req, res) {
+    const data = await setPublish(req, res, false);
+    return data;
+  }
+
+  static async getFile(req, res) {
+    const user = await getUserByToken(req);
+    const fileId = req.params.id;
+    if (user) {
+      const file = await dbClient.findFile({
+        userId: user._id,
+        _id: ObjectId(fileId),
+      });
+      if (!file || !file.isPublic) return throwError(res, 'Not found', 404);
+      if (file.type === 'folder') return throwError(res, "A folder doesn't have content");
+      let data;
+      const mineType = mime.lookup(file.name);
+      res.setHeader(
+        'content-type',
+        mineType || 'text/plain; charset=utf-8',
+      );
+      try {
+        data = fs.readFileSync(file.localPath);
+      } catch (err) {
+        return throwError(res, 'Not found', 404);
+      }
+      return res.status(200).send(data);
     }
     return throwUnauthError(res);
   }

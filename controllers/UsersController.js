@@ -3,6 +3,7 @@ import dbClient from '../utils/db';
 import throwError from '../utils/throwError';
 import getUserByToken from '../utils/getUserByToken';
 import throwUnauthError from '../utils/throwUnauthError';
+import { userQueue } from '../worker';
 
 export default class UsersController {
   static async postNew(req, res) {
@@ -23,6 +24,7 @@ export default class UsersController {
       email,
       password: hashedPassword,
     });
+    userQueue.add('welcome user', { userId: data.insertedId });
     return res.status(201).send({ email, id: data.insertedId });
   }
 
