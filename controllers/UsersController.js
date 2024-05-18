@@ -1,20 +1,22 @@
 import sha1 from 'sha1';
 import dbClient from '../utils/db';
-import redisClient from '../utils/redis';
+import throwError from '../utils/throwError';
+import getUserByToken from '../utils/getUserByToken';
+import throwUnauthError from '../utils/throwUnauthError';
 
 export default class UsersController {
   static async postNew(req, res) {
     const { email, password } = req.body;
 
     if (!email) {
-      return res.status(400).send({ error: 'Missing email' });
+      throwError(res, 'Missing email');
     }
     const user = await dbClient.findUser(email);
     if (!password) {
-      return res.status(400).send({ error: 'Missing password' });
+      throwError(res, 'Missing password');
     }
     if (user) {
-      return res.status(400).send({ error: 'Already exist' });
+      throwError(res, 'Already exist');
     }
     const hashedPassword = sha1(password);
     const data = await dbClient.users.insertOne({
@@ -25,12 +27,10 @@ export default class UsersController {
   }
 
   static async getMe(req, res) {
-    const token = req.headers['x-token'];
-    const userID = await redisClient.get(`auth_${token}`);
-    const user = await dbClient.findUser('_id', userID);
-    if (userID && user) {
-      return res.status(200).send({ email: user.email, id: user._id });
+    const user = await getUserByToken(req);
+    if (user) {
+      return res.status(200).send({ email: user.email, id: user._id.toString() });
     }
-    return res.status(401).send({ error: 'Unauthorized' });
+    return throwUnauthError(res);
   }
 }

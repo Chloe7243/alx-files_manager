@@ -33,7 +33,12 @@ class DBClient {
   }
 
   async findUser(key, value) {
-    const user = await this.users.findOne({ key: value });
+    const user = await this.users.findOne({ [key]: value });
+    return user;
+  }
+
+  async findFile(key, value) {
+    const user = await this.users.findOne({ [key]: value });
     return user;
   }
 }
