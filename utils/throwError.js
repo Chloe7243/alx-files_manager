@@ -1,1 +1,1 @@
-export default (res, error) => res.status(400).send({ error });
+export default (res, error, code = 400) => res.status(code).send({ error });

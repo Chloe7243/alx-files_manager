@@ -7,6 +7,7 @@ import throwError from '../utils/throwError';
 import throwUnauthError from '../utils/throwUnauthError';
 
 const FOLDER_PATH = process.env.FOLDER_PATH || '/tmp/files_manager';
+const PAGE_LIMIT = 20;
 
 if (!fs.existsSync(FOLDER_PATH)) {
   fs.mkdirSync(FOLDER_PATH, { recursive: true });
@@ -29,7 +30,7 @@ export default class FilesController {
       if (type !== 'folder' && !data) {
         return throwError(res, 'Missing data');
       }
-      const file = await dbClient.findFile('_id', ObjectId(parentId));
+      const file = await dbClient.findFile({ _id: ObjectId(parentId) });
       if (parentId) {
         if (!file) {
           return throwError(res, 'Parent not found');
@@ -58,6 +59,34 @@ export default class FilesController {
         ...newFile,
       });
       return res.status(201).send(response.ops[0]);
+    }
+    return throwUnauthError(res);
+  }
+
+  static async getShow(req, res) {
+    const user = await getUserByToken(req);
+    const fileId = req.params.id;
+    if (user) {
+      const file = await dbClient.findFile({
+        userId: user._id,
+        _id: ObjectId(fileId),
+      });
+      if (!file) return throwError(res, 'Not found', 404);
+      return res.status(200).send(file);
+    }
+    return throwUnauthError(res);
+  }
+
+  static async getIndex(req, res) {
+    const user = await getUserByToken(req);
+    const { parentId = 0, page = 0 } = req.query;
+    if (user) {
+      const files = await dbClient.files
+        .find({ parentId, userId: user._id })
+        .skip(page * PAGE_LIMIT)
+        .limit(PAGE_LIMIT)
+        .toArray();
+      return res.status(200).send(files);
     }
     return throwUnauthError(res);
   }

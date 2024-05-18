@@ -11,7 +11,7 @@ export default class UsersController {
     if (!email) {
       throwError(res, 'Missing email');
     }
-    const user = await dbClient.findUser(email);
+    const user = await dbClient.findUser({ email });
     if (!password) {
       throwError(res, 'Missing password');
     }

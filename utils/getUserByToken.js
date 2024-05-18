@@ -5,6 +5,6 @@ import redisClient from './redis';
 export default async (req) => {
   const token = req.headers['x-token'];
   const userID = await redisClient.get(`auth_${token}`);
-  const user = await dbClient.findUser('_id', ObjectId(userID));
+  const user = await dbClient.findUser({ _id: ObjectId(userID) });
   return user;
 };

@@ -10,6 +10,8 @@ router.get('/stats', AppController.getStats);
 router.get('/status', AppController.getStatus);
 router.get('/users/me', UsersController.getMe);
 router.post('/users', UsersController.postNew);
+router.get('/files', FilesController.getIndex);
+router.get('/files/:id', FilesController.getShow);
 router.post('/files', FilesController.postUpload);
 router.get('/connect', AuthController.getConnect);
 router.get('/disconnect', AuthController.getDisconnect);

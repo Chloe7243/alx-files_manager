@@ -13,7 +13,7 @@ export default class AuthController {
       );
       const [email, password] = base64Decode.split(':');
       const endodedP = sha1(password);
-      const user = await dbClient.findUser(email);
+      const user = await dbClient.findUser({ email });
 
       if (user) {
         if (endodedP === user.password) {
